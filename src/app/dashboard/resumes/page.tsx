@@ -441,7 +441,7 @@ export default function ResumeMakerPage() {
                 </Card>
             </div>
 
-            <Button onClick={handleATSAnalysis} disabled={isATSAnalyzing} variant="outline" className="border-amber-500/30 text-amber-500 hover:bg-amber-500/10 rounded-none font-mono text-[10px]">
+            <Button onClick={() => handleATSAnalysis()} disabled={isATSAnalyzing} variant="outline" className="border-amber-500/30 text-amber-500 hover:bg-amber-500/10 rounded-none font-mono text-[10px]">
                 {isATSAnalyzing ? <Loader2 className="w-3 h-3 animate-spin mr-2" /> : <BarChart3 className="w-3 h-3 mr-2" />}
                 CHECK ATS SCORE
             </Button>
