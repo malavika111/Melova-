@@ -1,0 +1,109 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 187 100% 98%;
+    /* Very light blue background for light mode */
+    --foreground: 220 20% 4%;
+    /* Almost black text */
+
+    --card: 0 0% 100%;
+    --card-foreground: 220 20% 4%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 20% 4%;
+
+    --primary: 187 52% 80%;
+    /* #B0E0E6 Powder Blue */
+    --primary-foreground: 220 20% 4%;
+
+    --secondary: 197 71% 73%;
+    /* #87CEEB Sky Blue */
+    --secondary-foreground: 220 20% 4%;
+
+    --muted: 187 20% 90%;
+    --muted-foreground: 187 40% 40%;
+
+    --accent: 187 52% 80%;
+    --accent-foreground: 220 20% 4%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 187 52% 80% / 0.5;
+    --input: 187 52% 80% / 0.5;
+    --ring: 197 71% 73%;
+
+    --radius: 0.25rem;
+  }
+
+  .dark {
+    --background: 220 20% 4%;
+    /* #0A0A0A-ish deep blue-black */
+    --foreground: 187 100% 95%;
+    /* Very light powder blue */
+
+    --card: 220 20% 7%;
+    --card-foreground: 187 100% 95%;
+
+    --popover: 220 20% 7%;
+    --popover-foreground: 187 100% 95%;
+
+    --primary: 187 52% 80%;
+    /* #B0E0E6 */
+    --primary-foreground: 220 20% 4%;
+
+    --secondary: 197 71% 73%;
+    /* #87CEEB */
+    --secondary-foreground: 220 20% 4%;
+
+    --muted: 220 20% 10%;
+    --muted-foreground: 187 52% 80% / 0.7;
+
+    --accent: 187 52% 80%;
+    --accent-foreground: 220 20% 4%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 187 52% 80% / 0.25;
+    --input: 187 52% 80% / 0.25;
+    --ring: 187 52% 80%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border selection:bg-primary/30 selection:text-primary;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased font-mono;
+    cursor: none;
+    /* For custom cyber cursor */
+  }
+
+  /* Make standard cursors fallback if custom canvas isn't hovered */
+  a,
+  button,
+  input,
+  [role="button"] {
+    cursor: none;
+  }
+}
+
+@layer utilities {
+  .glass-cyber {
+    @apply bg-[#111111]/80 backdrop-blur-xl border border-[#B0E0E6]/20 shadow-[0_0_15px_rgba(176, 224, 230, 0.1)];
+  }
+
+  .neon-text-glow {
+    text-shadow: 0 0 10px rgba(176, 224, 230, 0.5), 0 0 20px rgba(176, 224, 230, 0.3);
+  }
+
+  .neon-border-glow {
+    box-shadow: 0 0 10px rgba(176, 224, 230, 0.2), inset 0 0 10px rgba(176, 224, 230, 0.1);
+  }
+}
