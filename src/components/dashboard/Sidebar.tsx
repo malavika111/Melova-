@@ -44,16 +44,6 @@ const routes = [
         icon: BrainCircuit,
         href: '/dashboard/agent',
     },
-    {
-        label: 'Memory Logs',
-        icon: Cpu,
-        href: '/dashboard/memory-logs',
-    },
-    {
-        label: 'Extracted Data',
-        icon: Bookmark,
-        href: '/dashboard/extracted-data',
-    },
 ]
 
 export function Sidebar() {

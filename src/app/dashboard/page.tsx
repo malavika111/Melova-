@@ -18,7 +18,9 @@ import {
     Terminal,
     StickyNote,
     UserCircle2,
-    Briefcase
+    Briefcase,
+    Cpu,
+    Bookmark
 } from 'lucide-react'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -224,6 +226,22 @@ export default function DashboardPage() {
                         </motion.div>
                     </form>
                 </Card>
+
+                {/* Sub-actions for YouTube Summarizer */}
+                <div className="flex flex-wrap gap-4 mt-6">
+                    <Link href="/dashboard/memory-logs">
+                        <Button variant="ghost" className="text-[#B0E0E6]/60 hover:text-[#B0E0E6] font-mono text-[10px] uppercase h-10 border border-[#B0E0E6]/10 hover:border-[#B0E0E6]/30 rounded-none px-6 bg-[#B0E0E6]/5 hover:bg-[#B0E0E6]/10 transition-all">
+                            <Cpu className="w-4 h-4 mr-2" />
+                            Summary History
+                        </Button>
+                    </Link>
+                    <Link href="/dashboard/extracted-data">
+                        <Button variant="ghost" className="text-[#B0E0E6]/60 hover:text-[#B0E0E6] font-mono text-[10px] uppercase h-10 border border-[#B0E0E6]/10 hover:border-[#B0E0E6]/30 rounded-none px-6 bg-[#B0E0E6]/5 hover:bg-[#B0E0E6]/10 transition-all">
+                            <Bookmark className="w-4 h-4 mr-2" />
+                            Saved Insights
+                        </Button>
+                    </Link>
+                </div>
             </motion.div>
 
             {/* ── Thumbnail Preview ─────────────────────────────────────── */}
