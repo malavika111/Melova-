@@ -29,6 +29,7 @@ import { getUserNotes, saveNote, deleteNote } from '@/lib/supabase/db'
 export default function NotesPage() {
     const [notes, setNotes] = useState<any[]>([])
     const [searchQuery, setSearchQuery] = useState('')
+    const [sidebarTab, setSidebarTab] = useState<'tools' | 'saved'>('tools')
     const [selectedNote, setSelectedNote] = useState<any>(null)
     const [isAILoading, setIsAILoading] = useState(false)
     const [activeAITool, setActiveAITool] = useState<string | null>(null)
@@ -60,12 +61,17 @@ export default function NotesPage() {
         fetchNotes()
     }, [])
 
+    const filteredNotes = notes.filter(note => 
+        note.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        note.content?.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+
     const handleSave = async () => {
         if (!selectedNote) return
         setIsSaving(true)
         try {
             const saved = await saveNote({
-                id: selectedNote.id || Date.now().toString(),
+                id: (selectedNote.id && !selectedNote.id.toString().includes('.')) ? selectedNote.id : undefined,
                 title: selectedNote.title,
                 content: selectedNote.content,
                 tags: selectedNote.tags || [],
@@ -87,10 +93,20 @@ export default function NotesPage() {
     }
 
     const handleDelete = async (id: string) => {
-        const success = await deleteNote(id)
-        if (success) {
-            setNotes(notes.filter(n => n.id !== id))
+        try {
+            // New notes or unsynced notes might have timestamp IDs instead of UUIDs
+            const isLocalOnly = !id || !id.toString().includes('-');
+
+            if (!isLocalOnly) {
+                await deleteNote(id)
+            }
+
+            // Update local state regardless to ensure UI responsiveness
+            setNotes(prev => prev.filter(n => n.id !== id))
             if (selectedNote?.id === id) setSelectedNote(null)
+            setShowConfirmModal(null)
+        } catch (error) {
+            console.error('Failed to purge note:', error)
             setShowConfirmModal(null)
         }
     }
@@ -232,7 +248,10 @@ export default function NotesPage() {
                         INGEST DOCUMENT
                     </Button>
                     <Button 
-                        onClick={() => setSelectedNote({ id: undefined, title: 'NEW_NODE', content: '', tags: [], is_ai_enhanced: false })} 
+                        onClick={() => {
+                            setSelectedNote({ id: undefined, title: 'NEW_NODE', content: '', tags: [], is_ai_enhanced: false })
+                            setSidebarTab('saved')
+                        }} 
                         className="bg-[#B0E0E6] text-[#0A0A0A] hover:bg-[#87CEEB] rounded-none font-bold font-mono group"
                     >
                         <Plus className="w-4 h-4 mr-2" />
@@ -242,55 +261,113 @@ export default function NotesPage() {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-[calc(100vh-220px)] overflow-hidden">
-                <Card className="lg:col-span-2 bg-[#111111]/90 border-[#B0E0E6]/20 rounded-none flex flex-col overflow-hidden">
-                    <div className="p-4 bg-[#B0E0E6]/5 border-b border-[#B0E0E6]/20">
-                        <h3 className="text-[#B0E0E6] font-mono font-bold text-xs uppercase tracking-widest flex items-center gap-2 mb-4">
-                            <Sparkles className="w-4 h-4" /> AI Tools Matrix
-                        </h3>
-                        <div className="grid grid-cols-1 gap-1.5">
-                            {AI_TOOLS.map((tool) => (
-                                <button
-                                    key={tool.id}
-                                    onClick={() => handleAITool(tool.id)}
-                                    disabled={isAILoading || !selectedNote}
-                                    className={cn(
-                                        "w-full flex items-center gap-2.5 p-2.5 text-left transition-all border font-mono text-[9px] uppercase group",
-                                        activeAITool === tool.id 
-                                            ? "bg-[#B0E0E6] text-[#0A0A0A] border-[#B0E0E6]" 
-                                            : "bg-[#0A0A0A] border-[#B0E0E6]/10 text-[#B0E0E6]/60 hover:border-[#B0E0E6]/40 hover:text-[#B0E0E6]",
-                                        !selectedNote && "opacity-30 cursor-not-allowed"
-                                    )}
-                                >
-                                    <tool.icon className={cn("w-3.5 h-3.5", activeAITool === tool.id ? "" : "opacity-40 group-hover:opacity-100")} />
-                                    <span>{tool.label}</span>
-                                    {activeAITool === tool.id && <Loader2 className="w-3 h-3 ml-auto animate-spin" />}
-                                </button>
-                            ))}
-                        </div>
+                <Card className="lg:col-span-3 bg-[#111111]/90 border-[#B0E0E6]/20 rounded-none flex flex-col overflow-hidden">
+                    <div className="flex border-b border-[#B0E0E6]/20">
+                        <button 
+                            onClick={() => setSidebarTab('tools')}
+                            className={cn(
+                                "flex-1 py-3 font-mono text-[10px] font-bold uppercase tracking-widest transition-all",
+                                sidebarTab === 'tools' ? "bg-[#B0E0E6]/10 text-[#B0E0E6] border-b-2 border-[#B0E0E6]" : "text-[#B0E0E6]/30 hover:text-[#B0E0E6]/60"
+                            )}
+                        >
+                            AI Tools
+                        </button>
+                        <button 
+                            onClick={() => setSidebarTab('saved')}
+                            className={cn(
+                                "flex-1 py-3 font-mono text-[10px] font-bold uppercase tracking-widest transition-all",
+                                sidebarTab === 'saved' ? "bg-[#B0E0E6]/10 text-[#B0E0E6] border-b-2 border-[#B0E0E6]" : "text-[#B0E0E6]/30 hover:text-[#B0E0E6]/60"
+                            )}
+                        >
+                            Saved
+                        </button>
                     </div>
-                    <div className="p-4 bg-[#0A0A0A]/50 border-b border-[#B0E0E6]/10">
-                        <h3 className="text-[#B0E0E6]/40 font-mono font-bold text-[10px] uppercase tracking-widest">SAVED NODES</h3>
-                    </div>
-                    <div className="flex-1 overflow-y-auto p-2 space-y-2 custom-scrollbar">
-                        {notes.map((note) => (
-                            <div
-                                key={note.id}
-                                onClick={() => setSelectedNote(note)}
-                                className={cn(
-                                    "p-4 cursor-pointer transition-all border",
-                                    selectedNote?.id === note.id 
-                                        ? "bg-[#B0E0E6]/10 border-[#B0E0E6]/40 shadow-[inset_0_0_10px_rgba(176,224,230,0.1)]" 
-                                        : "bg-transparent border-[#B0E0E6]/5 hover:bg-[#B0E0E6]/5 hover:border-[#B0E0E6]/20"
-                                )}
-                            >
-                                <h3 className="font-bold text-[#E0F7FA] truncate font-mono text-xs uppercase mb-1">{note.title || "UNTITLED"}</h3>
-                                <p className="text-[10px] text-[#B0E0E6]/30 line-clamp-2 font-mono">{note.content}</p>
+
+                    <div className="flex-1 overflow-hidden flex flex-col">
+                        {sidebarTab === 'tools' ? (
+                            <div className="p-4 space-y-4 overflow-y-auto custom-scrollbar">
+                                <h3 className="text-[#B0E0E6] font-mono font-bold text-xs uppercase tracking-widest flex items-center gap-2">
+                                    <Sparkles className="w-4 h-4" /> AI Tools Matrix
+                                </h3>
+                                <div className="grid grid-cols-1 gap-1.5">
+                                    {AI_TOOLS.map((tool) => (
+                                        <button
+                                            key={tool.id}
+                                            onClick={() => handleAITool(tool.id)}
+                                            disabled={isAILoading || !selectedNote}
+                                            className={cn(
+                                                "w-full flex items-center gap-2.5 p-2.5 text-left transition-all border font-mono text-[9px] uppercase group",
+                                                activeAITool === tool.id 
+                                                    ? "bg-[#B0E0E6] text-[#0A0A0A] border-[#B0E0E6]" 
+                                                    : "bg-[#0A0A0A] border-[#B0E0E6]/10 text-[#B0E0E6]/60 hover:border-[#B0E0E6]/40 hover:text-[#B0E0E6]",
+                                                !selectedNote && "opacity-30 cursor-not-allowed"
+                                            )}
+                                        >
+                                            <tool.icon className={cn("w-3.5 h-3.5", activeAITool === tool.id ? "" : "opacity-40 group-hover:opacity-100")} />
+                                            <span>{tool.label}</span>
+                                            {activeAITool === tool.id && <Loader2 className="w-3 h-3 ml-auto animate-spin" />}
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
-                        ))}
+                        ) : (
+                            <div className="flex-1 flex flex-col overflow-hidden">
+                                <div className="p-4 border-b border-[#B0E0E6]/10">
+                                    <div className="relative">
+                                        <Input 
+                                            placeholder="SEARCH SAVED..."
+                                            value={searchQuery}
+                                            onChange={(e) => setSearchQuery(e.target.value)}
+                                            className="bg-black/40 border-[#B0E0E6]/10 text-[#E0F7FA] font-mono text-[10px] h-9 rounded-none pl-8"
+                                        />
+                                        <List className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-[#B0E0E6]/30" />
+                                    </div>
+                                </div>
+                                <div className="flex-1 overflow-y-auto p-2 space-y-2 custom-scrollbar">
+                                    {filteredNotes.length > 0 ? (
+                                        filteredNotes.map((note) => (
+                                            <div
+                                                key={note.id}
+                                                onClick={() => setSelectedNote(note)}
+                                                className={cn(
+                                                    "p-4 cursor-pointer transition-all border group relative",
+                                                    selectedNote?.id === note.id 
+                                                        ? "bg-[#B0E0E6]/10 border-[#B0E0E6]/40 shadow-[inset_0_0_10px_rgba(176,224,230,0.1)]" 
+                                                        : "bg-transparent border-[#B0E0E6]/5 hover:bg-[#B0E0E6]/5 hover:border-[#B0E0E6]/20"
+                                                )}
+                                            >
+                                                <div className="flex justify-between items-start mb-1">
+                                                    <h3 className="font-bold text-[#E0F7FA] truncate font-mono text-xs uppercase pr-4">{note.title || "UNTITLED"}</h3>
+                                                    {note.is_ai_enhanced && <Sparkles className="w-3 h-3 text-[#B0E0E6]/40 shrink-0" />}
+                                                </div>
+                                                <p className="text-[9px] text-[#B0E0E6]/30 line-clamp-2 font-mono">{note.content}</p>
+                                                <div className="mt-2 flex items-center justify-between">
+                                                    <span className="text-[8px] font-mono text-[#B0E0E6]/20">{note.updated_at ? new Date(note.updated_at).toLocaleDateString() : 'N/A'}</span>
+                                                    <button 
+                                                        onClick={(e) => {
+                                                            e.stopPropagation()
+                                                            setShowConfirmModal(note.id)
+                                                        }}
+                                                        className="opacity-0 group-hover:opacity-100 transition-opacity text-red-500/40 hover:text-red-500"
+                                                    >
+                                                        <Trash2 className="w-3 h-3" />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <div className="flex flex-col items-center justify-center p-8 text-center opacity-20">
+                                            <Brain className="w-10 h-10 mb-4" />
+                                            <p className="text-[10px] font-mono uppercase tracking-widest">No neural nodes found</p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </Card>
 
-                <Card className={cn("transition-all duration-500 bg-[#111111]/90 border-[#B0E0E6]/20 rounded-none overflow-hidden flex flex-col relative", aiResult ? "lg:col-span-5" : "lg:col-span-10")}>
+                <Card className={cn("transition-all duration-500 bg-[#111111]/90 border-[#B0E0E6]/20 rounded-none overflow-hidden flex flex-col relative", aiResult ? "lg:col-span-4" : "lg:col-span-9")}>
                     {selectedNote ? (
                         <div className="flex flex-col h-full p-6 md:p-8">
                             <div className="flex items-center justify-between mb-4 border-b border-[#B0E0E6]/10 pb-4">
@@ -300,7 +377,10 @@ export default function NotesPage() {
                                     className="text-2xl font-bold bg-transparent border-none text-[#E0F7FA] focus-visible:ring-0 font-mono uppercase"
                                 />
                                 <div className="flex gap-2">
-                                    <Button onClick={handleSave} disabled={isSaving} size="sm" className="bg-[#B0E0E6] text-[#0A0A0A] rounded-none font-mono text-[10px] h-8">SYNC</Button>
+                                    <Button onClick={handleSave} disabled={isSaving} size="sm" className="bg-[#B0E0E6] text-[#0A0A0A] rounded-none font-mono text-[10px] h-8">
+                                        {isSaving ? <Loader2 className="w-3 h-3 animate-spin mr-2" /> : <Save className="w-3 h-3 mr-2" />}
+                                        SYNC
+                                    </Button>
                                     <Button onClick={() => setShowConfirmModal(selectedNote.id)} size="sm" className="bg-transparent border border-red-500/30 text-red-500 rounded-none h-8 w-8 p-0 hover:bg-red-500/10"><Trash2 className="w-3 h-3" /></Button>
                                 </div>
                             </div>
@@ -314,10 +394,11 @@ export default function NotesPage() {
                     ) : (
                         <div className="flex-1 flex flex-col items-center justify-center text-[#B0E0E6]/20 p-10 font-mono opacity-20">
                             <Brain className="w-24 h-24 mb-6" />
-                            <p className="uppercase tracking-widest">Select a note to begin</p>
+                            <p className="uppercase tracking-widest text-center">Inception point ready.<br/>Select a note to begin synthesis.</p>
                         </div>
                     )}
                 </Card>
+
 
                 <AnimatePresence>
                     {aiResult && (
